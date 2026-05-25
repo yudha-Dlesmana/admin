@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/store/auth";
 import { API } from "@/lib/config";
+import { TokenSchema } from "@/types/auth";
 
 let refreshing: Promise<boolean> | null = null;
 function refresh() {
@@ -20,11 +21,8 @@ async function doRefresh(): Promise<boolean> {
       useAuthStore.getState().clearAuth();
       return false;
     }
-    const data = await res.json();
-    useAuthStore.getState().setToken({
-      accessToken: data.access_token,
-      tokenType: data.token_type,
-    });
+    const data = TokenSchema.parse(await res.json());
+    useAuthStore.getState().setToken(data);
     return true;
   } catch {
     useAuthStore.getState().clearAuth();
@@ -36,7 +34,7 @@ function setHeaders(init: RequestInit): RequestInit {
   const token = useAuthStore.getState().token;
   const headers = new Headers(init.headers);
   if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `${token.tokenType} ${token.accessToken}`);
+    headers.set("Authorization", `${token.token_type} ${token.access_token}`);
   }
   return { ...init, headers };
 }
