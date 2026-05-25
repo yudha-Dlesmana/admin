@@ -3,7 +3,7 @@ import { API } from "@/lib/config";
 import { TokenSchema } from "@/types/auth";
 
 let refreshing: Promise<boolean> | null = null;
-function refresh() {
+export function refresh() {
   if (!refreshing) {
     refreshing = doRefresh().finally(() => {
       refreshing = null;
@@ -40,9 +40,8 @@ function setHeaders(init: RequestInit): RequestInit {
 }
 
 export async function client(url: string, init: RequestInit = {}) {
-  const hadToken = !!useAuthStore.getState().token;
   let res = await fetch(url, setHeaders(init));
-  if (res.status === 401 && hadToken) {
+  if (res.status === 401) {
     const ok = await refresh();
     if (ok) res = await fetch(url, setHeaders(init));
   }
