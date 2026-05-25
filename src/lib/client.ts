@@ -40,8 +40,9 @@ function setHeaders(init: RequestInit): RequestInit {
 }
 
 export async function client(url: string, init: RequestInit = {}) {
+  const hadToken = !!useAuthStore.getState().token;
   let res = await fetch(url, setHeaders(init));
-  if (res.status === 401) {
+  if (res.status === 401 && hadToken) {
     const ok = await refresh();
     if (ok) res = await fetch(url, setHeaders(init));
   }
