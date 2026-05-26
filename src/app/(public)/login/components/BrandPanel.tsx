@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function BrandPanel() {
   return (
-    <aside className="hidden lg:flex flex-col justify-between p-12 ground relative overflow-hidden">
+    <aside className="hidden lg:flex flex-col justify-between p-12 bg-black text-white relative overflow-hidden">
       <div className="relative z-10">
         <Image
           className="filter-[brightness(0)_saturate(100%)_invert(1)]"
