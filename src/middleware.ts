@@ -9,21 +9,11 @@ export async function middleware(req: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 
-  const refresh = req.cookies.get("refresh_token")?.value;
-  let valid = false;
-  if (refresh) {
-    try {
-      const res = await fetch(`${API.IAM}/auth/validate`, {
-        headers: { cookie: `refresh_token=${refresh}` },
-        cache: "no-store",
-      });
-      valid = res.ok;
-    } catch {
-      valid = false;
-    }
-  }
-  if (isPublic && valid) return NextResponse.redirect(new URL("/", req.url));
-  if (!isPublic && !valid) {
+  const hasCookie = !!req.cookies.get("refresh_token")?.value;
+
+  if (isPublic && hasCookie)
+    return NextResponse.redirect(new URL("/", req.url));
+  if (!isPublic && !hasCookie) {
     const url = new URL("/login", req.url);
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
