@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getCurrentUser } from "@/lib/api/auth";
+import { refresh, getCurrentUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    getCurrentUser()
+    refresh()
+      .then((ok) => (ok ? getCurrentUser() : null))
       .catch(() => useAuthStore.getState().clearAuth())
       .finally(() => setReady(true));
   }, []);

@@ -3,6 +3,8 @@ import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/auth";
 import { TokenSchema, UserSchema } from "@/types/auth";
 
+export { refresh } from "@/lib/client";
+
 export async function login(email: string, password: string) {
   const res = await fetch(`${API.IAM}/auth/login`, {
     method: "POST",
