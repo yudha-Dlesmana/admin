@@ -8,7 +8,7 @@ export function Topbar() {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <header className="h-14 shrink-0 border-b flex items-center justify-between px-4">
+    <header className="sticky top-0 z-20 h-14 shrink-0 border-b flex items-center justify-between px-4">
       <SidebarTrigger />
       <div className="flex items-center gap-4">
         {user && (
