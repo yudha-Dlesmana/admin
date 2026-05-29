@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/shell/AppSidebar";
 import { Topbar } from "@/components/shell/Topbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export default async function AppLayout({
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
