@@ -3,6 +3,7 @@ import {
   UsersIcon,
   ShieldCheckIcon,
   KeyIcon,
+  IdentificationCardIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 
@@ -32,5 +33,11 @@ export const NAV: NavItem[] = [
     href: "/permissions",
     icon: KeyIcon,
     permission: "permission.read",
+  },
+  {
+    label: "Sessions",
+    href: "/sessions",
+    icon: IdentificationCardIcon,
+    permission: "session.read",
   },
 ];
