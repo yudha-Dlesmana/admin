@@ -1,0 +1,150 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  MagnifyingGlassIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ShieldIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
+import { getRoles } from "@/lib/api/roles";
+import type { Role } from "@/types/role";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const LIMIT = 10;
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
+}
+
+export function RoleList() {
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [offset, setOffset] = useState(0);
+
+  const [items, setItems] = useState<Role[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  // Debounce the search input and reset to the first page on change.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(search.trim());
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(false);
+    getRoles({ limit: LIMIT, offset, nameLike: query || undefined })
+      .then((res) => {
+        if (!active) return;
+        setItems(res.items);
+        setTotal(res.total);
+      })
+      .catch(() => active && setError(true))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [query, offset]);
+
+  const from = total === 0 ? 0 : offset + 1;
+  const to = Math.min(offset + LIMIT, total);
+  const canPrev = offset > 0;
+  const canNext = offset + LIMIT < total;
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search roles…"
+          className="pl-8"
+          maxLength={50}
+        />
+      </div>
+
+      <div className="divide-y border">
+        {loading ? (
+          Array.from({ length: LIMIT }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ))
+        ) : error ? (
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            Failed to load roles.
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
+            <ShieldIcon className="size-6" />
+            No roles found.
+          </div>
+        ) : (
+          items.map((r) => (
+            <div
+              key={r.id}
+              className="flex items-center justify-between gap-4 p-3"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldIcon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{r.name}</div>
+                  {r.single_session && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <UsersThreeIcon className="size-3" />
+                      Single session
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0 text-xs text-muted-foreground">
+                {formatDate(r.created_at)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">
+          {total > 0 ? `${from}–${to} of ${total}` : "0 results"}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!canPrev || loading}
+            onClick={() => setOffset((o) => Math.max(0, o - LIMIT))}
+          >
+            <CaretLeftIcon />
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!canNext || loading}
+            onClick={() => setOffset((o) => o + LIMIT)}
+          >
+            Next
+            <CaretRightIcon />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
