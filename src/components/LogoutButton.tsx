@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { logout } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 
-export function LogoutButton() {
+export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -12,7 +12,7 @@ export function LogoutButton() {
   };
 
   return (
-    <Button variant="outline" onClick={handleLogout}>
+    <Button variant="outline" onClick={handleLogout} className={className}>
       Logout
     </Button>
   );
