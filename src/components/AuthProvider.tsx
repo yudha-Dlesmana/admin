@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SpinnerIcon } from "@phosphor-icons/react";
 import { refresh, getCurrentUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth";
 
@@ -22,6 +23,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  if (!ready) return <div>Loading…</div>;
+  if (!ready)
+    return (
+      <div className="flex h-svh items-center justify-center">
+        <SpinnerIcon className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   return <>{children}</>;
 }
