@@ -66,7 +66,9 @@ export function PermissionList() {
     getPermissions({ limit: LIMIT, offset, nameLike: query || undefined })
       .then((res) => {
         if (!active) return;
-        setItems((prev) => (offset === 0 ? res.items : [...prev, ...res.items]));
+        setItems((prev) =>
+          offset === 0 ? res.items : [...prev, ...res.items],
+        );
         setTotal(res.total);
       })
       .catch(() => active && setError(true))
@@ -86,7 +88,7 @@ export function PermissionList() {
       (entries) => {
         if (entries[0].isIntersecting) setOffset((o) => o + LIMIT);
       },
-      { rootMargin: "100px" }
+      { rootMargin: "100px" },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -103,7 +105,7 @@ export function PermissionList() {
       setTarget(null);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete permission"
+        err instanceof Error ? err.message : "Failed to delete permission",
       );
     } finally {
       setDeleting(false);
@@ -133,7 +135,7 @@ export function PermissionList() {
         />
       </div>
 
-      <ScrollArea className="h-[480px] border">
+      <ScrollArea className="h-120 border">
         <div className="divide-y">
           {initialLoading ? (
             Array.from({ length: 8 }).map((_, i) => (
