@@ -34,7 +34,11 @@ export function AppSidebar() {
                   href === "/" ? pathname === "/" : pathname.startsWith(href);
                 return (
                   <SidebarMenuItem key={href}>
-                    <SidebarMenuButton>
+                    <SidebarMenuButton
+                      isActive={active}
+                      tooltip={label}
+                      render={<Link href={href} />}
+                    >
                       <Icon weight={active ? "fill" : "regular"} />
                       <span>{label}</span>
                     </SidebarMenuButton>
