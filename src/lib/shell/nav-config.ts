@@ -1,10 +1,4 @@
-import {
-  HouseIcon,
-  UsersIcon,
-  ShieldCheckIcon,
-  KeyIcon,
-  IdentificationCardIcon,
-} from "@phosphor-icons/react";
+import { HouseIcon, UsersIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 
 export type NavItem = {
@@ -27,11 +21,5 @@ export const NAV: NavItem[] = [
     href: "/roles-permissions",
     icon: ShieldCheckIcon,
     permission: "role.read",
-  },
-  {
-    label: "Audit Log",
-    href: "/audit-log",
-    icon: IdentificationCardIcon,
-    permission: "session.read",
   },
 ];
