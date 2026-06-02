@@ -1,6 +1,6 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
-import { RoleListSchema } from "@/types/role";
+import { RoleListSchema, RoleDetailSchema } from "@/types/role";
 
 export type ListRolesParams = {
   limit?: number;
@@ -22,4 +22,10 @@ export async function getRoles({
   const res = await client(`${API.IAM}/roles?${params}`);
   if (!res.ok) throw new Error("Failed to fetch roles");
   return RoleListSchema.parse(await res.json());
+}
+
+export async function getRole(id: number) {
+  const res = await client(`${API.IAM}/roles/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch role");
+  return RoleDetailSchema.parse(await res.json());
 }

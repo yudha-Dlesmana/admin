@@ -5,14 +5,18 @@ import {
   MagnifyingGlassIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  CaretDownIcon,
   ShieldIcon,
   UsersThreeIcon,
+  KeyIcon,
+  SpinnerIcon,
 } from "@phosphor-icons/react";
-import { getRoles } from "@/lib/api/roles";
-import type { Role } from "@/types/role";
+import { getRoles, getRole } from "@/lib/api/roles";
+import type { Role, RoleDetail } from "@/types/role";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const LIMIT = 10;
 
@@ -23,6 +27,12 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
 }
 
+type DetailState = {
+  loading: boolean;
+  error: boolean;
+  data?: RoleDetail;
+};
+
 export function RoleList() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -32,6 +42,9 @@ export function RoleList() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [details, setDetails] = useState<Record<number, DetailState>>({});
 
   // Debounce the search input and reset to the first page on change.
   useEffect(() => {
@@ -58,6 +71,30 @@ export function RoleList() {
       active = false;
     };
   }, [query, offset]);
+
+  // Reset expansion when the visible page changes.
+  useEffect(() => {
+    setExpanded(null);
+  }, [query, offset]);
+
+  const toggle = (id: number) => {
+    if (expanded === id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(id);
+    // Fetch the detail once; cache it afterwards.
+    if (!details[id]?.data && !details[id]?.loading) {
+      setDetails((d) => ({ ...d, [id]: { loading: true, error: false } }));
+      getRole(id)
+        .then((data) =>
+          setDetails((d) => ({ ...d, [id]: { loading: false, error: false, data } }))
+        )
+        .catch(() =>
+          setDetails((d) => ({ ...d, [id]: { loading: false, error: true } }))
+        );
+    }
+  };
 
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + LIMIT, total);
@@ -95,28 +132,82 @@ export function RoleList() {
             No roles found.
           </div>
         ) : (
-          items.map((r) => (
-            <div
-              key={r.id}
-              className="flex items-center justify-between gap-4 p-3"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <ShieldIcon className="size-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{r.name}</div>
-                  {r.single_session && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <UsersThreeIcon className="size-3" />
-                      Single session
+          items.map((r) => {
+            const isOpen = expanded === r.id;
+            const detail = details[r.id];
+            return (
+              <div key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => toggle(r.id)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <CaretDownIcon
+                      className={cn(
+                        "size-4 shrink-0 text-muted-foreground transition-transform",
+                        isOpen && "rotate-180"
+                      )}
+                    />
+                    <ShieldIcon className="size-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {r.name}
+                      </div>
+                      {r.single_session && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <UsersThreeIcon className="size-3" />
+                          Single session
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                  <div className="shrink-0 text-xs text-muted-foreground">
+                    {formatDate(r.created_at)}
+                  </div>
+                </button>
+
+                {isOpen && (
+                  <div className="border-t bg-muted/30 px-3 py-3">
+                    {detail?.loading ? (
+                      <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                        <SpinnerIcon className="size-4 animate-spin" />
+                        Loading permissions…
+                      </div>
+                    ) : detail?.error ? (
+                      <div className="py-2 text-center text-xs text-destructive">
+                        Failed to load role detail.
+                      </div>
+                    ) : detail?.data ? (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-muted-foreground">
+                          Permissions ({detail.data.permissions.length})
+                        </div>
+                        {detail.data.permissions.length === 0 ? (
+                          <div className="text-xs text-muted-foreground">
+                            No permissions assigned.
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {detail.data.permissions.map((p) => (
+                              <span
+                                key={p.id}
+                                className="inline-flex items-center gap-1 border bg-background px-2 py-1 font-mono text-xs"
+                              >
+                                <KeyIcon className="size-3 text-muted-foreground" />
+                                {p.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
-              <div className="shrink-0 text-xs text-muted-foreground">
-                {formatDate(r.created_at)}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

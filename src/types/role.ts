@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PermissionSchema } from "@/types/permission";
 
 export const RoleSchema = z.object({
   id: z.number(),
@@ -6,6 +7,13 @@ export const RoleSchema = z.object({
   single_session: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+});
+
+export const RoleDetailSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  single_session: z.boolean(),
+  permissions: z.array(PermissionSchema).default([]),
 });
 
 export const RoleListSchema = z.object({
@@ -17,3 +25,4 @@ export const RoleListSchema = z.object({
 
 export type Role = z.infer<typeof RoleSchema>;
 export type RoleList = z.infer<typeof RoleListSchema>;
+export type RoleDetail = z.infer<typeof RoleDetailSchema>;
