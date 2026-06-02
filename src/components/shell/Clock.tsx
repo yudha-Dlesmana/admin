@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClockIcon } from "@phosphor-icons/react";
-
 const TIME_ZONE = "Asia/Jakarta";
 
 export function Clock() {
@@ -35,7 +33,6 @@ export function Clock() {
 
   return (
     <div className="flex items-center gap-2">
-      <ClockIcon className="size-5 text-muted-foreground" />
       <div className="text-right leading-tight">
         <div className="font-mono text-base font-semibold tabular-nums">
           {time} <span className="text-xs text-muted-foreground">WIB</span>
