@@ -1,7 +1,7 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/auth";
-import { TokenSchema, UserSchema } from "@/types/auth";
+import { SessionsSchema, TokenSchema, UserSchema } from "@/types/auth";
 
 export { refresh } from "@/lib/client";
 
@@ -37,4 +37,10 @@ export async function getCurrentUser() {
   const user = UserSchema.parse(await res.json());
   useAuthStore.getState().setUser(user);
   return user;
+}
+
+export async function getSessions() {
+  const res = await client(`${API.IAM}/auth/sessions`);
+  if (!res.ok) throw new Error("Failed to fetch sessions");
+  return SessionsSchema.parse(await res.json());
 }
