@@ -53,17 +53,25 @@ function Field({
   icon: Icon,
   label,
   value,
+  title,
 }: {
   icon: typeof UserCircleIcon;
   label: string;
   value: React.ReactNode;
+  title?: string;
 }) {
   return (
     <div className="flex items-start gap-2.5">
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
         <div className="text-xs text-muted-foreground">{label}</div>
-        <div className="truncate text-sm font-medium">{value}</div>
+        <div
+          title={title}
+          className="truncate text-sm font-medium"
+          style={title ? { cursor: "help" } : undefined}
+        >
+          {value}
+        </div>
       </div>
     </div>
   );
@@ -118,7 +126,7 @@ export function CurrentUserAndSession() {
   }
 
   return (
-    <Card className="max-w-xl">
+    <Card>
       <CardHeader>
         <CardTitle>Current User &amp; Session</CardTitle>
         <CardDescription>
@@ -133,7 +141,12 @@ export function CurrentUserAndSession() {
             label="Role"
             value={user.role_name}
           />
-          <Field icon={UserCircleIcon} label="User ID" value={user.id} />
+          <Field
+            icon={UserCircleIcon}
+            label="User ID"
+            value={user.id}
+            title={user.id}
+          />
           <Field
             icon={ClockIcon}
             label="Member since"

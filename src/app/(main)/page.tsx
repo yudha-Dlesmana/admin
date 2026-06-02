@@ -1,15 +1,15 @@
+import { AuditLog } from "@/components/AuditLog";
 import { CurrentUserAndSession } from "@/components/CurrentUserAndSession";
+import { ServiceList } from "@/components/ServiceList";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start w-full max-w-xl">
-        <h1>Dashboard page</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Dashboard page</h1>
+      <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
+        <AuditLog />
         <CurrentUserAndSession />
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <h1>footer dashboard</h1>
-      </footer>
+      </div>
     </div>
   );
 }
