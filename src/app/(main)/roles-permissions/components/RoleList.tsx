@@ -20,6 +20,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AddRolePermission } from "./AddRolePermission";
 import { RolePermissionChips } from "./RolePermissionChips";
+import { AddRoleDialog } from "./AddRoleDialog";
+import { RoleNameEditor } from "./RoleNameEditor";
+import { DeleteRoleButton } from "./DeleteRoleButton";
 
 const LIMIT = 10;
 
@@ -48,6 +51,9 @@ export function RoleList() {
 
   const [expanded, setExpanded] = useState<number | null>(null);
   const [details, setDetails] = useState<Record<number, DetailState>>({});
+
+  // Bumped to force a list refetch (e.g. after creating a role).
+  const [reload, setReload] = useState(0);
 
   // Permission catalogue for the add-permission picker; fetched once.
   const [perms, setPerms] = useState<Permission[]>([]);
@@ -88,7 +94,7 @@ export function RoleList() {
     return () => {
       active = false;
     };
-  }, [query, offset]);
+  }, [query, offset, reload]);
 
   // Reset expansion when the visible page changes.
   useEffect(() => {
@@ -106,11 +112,40 @@ export function RoleList() {
       setDetails((d) => ({ ...d, [id]: { loading: true, error: false } }));
       getRole(id)
         .then((data) =>
-          setDetails((d) => ({ ...d, [id]: { loading: false, error: false, data } }))
+          setDetails((d) => ({
+            ...d,
+            [id]: { loading: false, error: false, data },
+          })),
         )
         .catch(() =>
-          setDetails((d) => ({ ...d, [id]: { loading: false, error: true } }))
+          setDetails((d) => ({ ...d, [id]: { loading: false, error: true } })),
         );
+    }
+  };
+
+  // Reflect a rename in both the list row and the cached detail.
+  const renameRole = (id: number, name: string) => {
+    setItems((cur) => cur.map((r) => (r.id === id ? { ...r, name } : r)));
+    setDetails((d) => {
+      const cur = d[id];
+      if (!cur?.data) return d;
+      return { ...d, [id]: { ...cur, data: { ...cur.data, name } } };
+    });
+  };
+
+  // Drop a deleted role: collapse, forget its detail, and refetch the page.
+  const deleteRoleRow = (id: number) => {
+    setExpanded(null);
+    setDetails((d) => {
+      const next = { ...d };
+      delete next[id];
+      return next;
+    });
+    // If it was the last row on a non-first page, step back a page.
+    if (items.length === 1 && offset > 0) {
+      setOffset((o) => Math.max(0, o - LIMIT));
+    } else {
+      setReload((n) => n + 1);
     }
   };
 
@@ -121,14 +156,23 @@ export function RoleList() {
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search roles…"
-          className="pl-8"
-          maxLength={50}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search roles…"
+            className="pl-8"
+            maxLength={50}
+          />
+        </div>
+        <AddRoleDialog
+          onCreated={() => {
+            setSearch("");
+            setOffset(0);
+            setReload((n) => n + 1);
+          }}
         />
       </div>
 
@@ -165,7 +209,7 @@ export function RoleList() {
                     <CaretDownIcon
                       className={cn(
                         "size-4 shrink-0 text-muted-foreground transition-transform",
-                        isOpen && "rotate-180"
+                        isOpen && "rotate-180",
                       )}
                     />
                     <ShieldIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -199,8 +243,22 @@ export function RoleList() {
                       </div>
                     ) : detail?.data ? (
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-muted-foreground">
-                          Permissions ({detail.data.permissions.length})
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Permissions ({detail.data.permissions.length})
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <RoleNameEditor
+                              roleId={r.id}
+                              currentName={detail.data.name}
+                              onRenamed={(role) => renameRole(r.id, role.name)}
+                            />
+                            <DeleteRoleButton
+                              roleId={r.id}
+                              roleName={detail.data.name}
+                              onDeleted={() => deleteRoleRow(r.id)}
+                            />
+                          </div>
                         </div>
                         {detail.data.permissions.length === 0 ? (
                           <div className="text-xs text-muted-foreground">

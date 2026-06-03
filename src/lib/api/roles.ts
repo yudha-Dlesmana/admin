@@ -1,6 +1,7 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
-import { RoleListSchema, RoleDetailSchema } from "@/types/role";
+import { RoleListSchema, RoleDetailSchema, RoleSchema } from "@/types/role";
+import type { CreateRoleInput } from "@/types/role";
 
 export type ListRolesParams = {
   limit?: number;
@@ -24,10 +25,35 @@ export async function getRoles({
   return RoleListSchema.parse(await res.json());
 }
 
+export async function createRole(input: CreateRoleInput) {
+  const res = await client(`${API.IAM}/roles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to create role");
+  return RoleSchema.parse(await res.json());
+}
+
+export async function updateRole(id: number, input: CreateRoleInput) {
+  const res = await client(`${API.IAM}/roles/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to update role");
+  return RoleSchema.parse(await res.json());
+}
+
 export async function getRole(id: number) {
   const res = await client(`${API.IAM}/roles/${id}`);
   if (!res.ok) throw new Error("Failed to fetch role");
   return RoleDetailSchema.parse(await res.json());
+}
+
+export async function deleteRole(id: number) {
+  const res = await client(`${API.IAM}/roles/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete role");
 }
 
 export async function addRolePermissions(id: number, permissionIds: number[]) {

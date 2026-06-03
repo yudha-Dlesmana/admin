@@ -23,6 +23,15 @@ export const RoleListSchema = z.object({
   offset: z.number(),
 });
 
+export const createRoleSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name is too long"),
+});
+
 export type Role = z.infer<typeof RoleSchema>;
 export type RoleList = z.infer<typeof RoleListSchema>;
 export type RoleDetail = z.infer<typeof RoleDetailSchema>;
+export type CreateRoleInput = z.infer<typeof createRoleSchema>;
