@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import {
   MagnifyingGlassIcon,
   KeyIcon,
@@ -9,21 +8,13 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import { AddPermissionDialog } from "./AddPermissionDialog";
-import { getPermissions, deletePermission } from "@/lib/api/permissions";
+import { DeletePermissionDialog } from "./DeletePermissionDialog";
+import { getPermissions } from "@/lib/api/permissions";
 import type { Permission } from "@/types/permission";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const LIMIT = 20;
 
@@ -46,7 +37,6 @@ export function PermissionList() {
   const [error, setError] = useState(false);
 
   const [target, setTarget] = useState<Permission | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -94,22 +84,9 @@ export function PermissionList() {
     return () => io.disconnect();
   }, [hasMore, loading]);
 
-  const confirmDelete = async () => {
-    if (!target) return;
-    setDeleting(true);
-    try {
-      await deletePermission(target.id);
-      setItems((prev) => prev.filter((p) => p.id !== target.id));
-      setTotal((t) => Math.max(0, t - 1));
-      toast.success("Permission deleted");
-      setTarget(null);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete permission",
-      );
-    } finally {
-      setDeleting(false);
-    }
+  const handleDeleted = (id: number) => {
+    setItems((prev) => prev.filter((p) => p.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
   };
 
   const initialLoading = loading && offset === 0;
@@ -199,40 +176,11 @@ export function PermissionList() {
         {total > 0 ? `${items.length} of ${total}` : "0 results"}
       </div>
 
-      <Dialog
-        open={!!target}
-        onOpenChange={(next) => !next && !deleting && setTarget(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete permission</DialogTitle>
-            <DialogDescription>
-              Delete{" "}
-              <span className="font-mono font-medium text-foreground">
-                {target?.name}
-              </span>
-              ? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose
-              render={
-                <Button type="button" variant="outline" disabled={deleting}>
-                  Cancel
-                </Button>
-              }
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleting}
-              onClick={confirmDelete}
-            >
-              {deleting ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeletePermissionDialog
+        permission={target}
+        onOpenChange={(open) => !open && setTarget(null)}
+        onDeleted={handleDeleted}
+      />
     </div>
   );
 }
