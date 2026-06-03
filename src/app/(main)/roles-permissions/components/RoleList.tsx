@@ -8,15 +8,18 @@ import {
   CaretDownIcon,
   ShieldIcon,
   UsersThreeIcon,
-  KeyIcon,
   SpinnerIcon,
 } from "@phosphor-icons/react";
 import { getRoles, getRole } from "@/lib/api/roles";
+import { getPermissions } from "@/lib/api/permissions";
 import type { Role, RoleDetail } from "@/types/role";
+import type { Permission } from "@/types/permission";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { AddRolePermission } from "./AddRolePermission";
+import { RolePermissionChips } from "./RolePermissionChips";
 
 const LIMIT = 10;
 
@@ -45,6 +48,21 @@ export function RoleList() {
 
   const [expanded, setExpanded] = useState<number | null>(null);
   const [details, setDetails] = useState<Record<number, DetailState>>({});
+
+  // Permission catalogue for the add-permission picker; fetched once.
+  const [perms, setPerms] = useState<Permission[]>([]);
+  const [permsLoading, setPermsLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setPermsLoading(true);
+    getPermissions({ limit: 100 })
+      .then((res) => active && setPerms(res.items))
+      .finally(() => active && setPermsLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounce the search input and reset to the first page on change.
   useEffect(() => {
@@ -189,18 +207,29 @@ export function RoleList() {
                             No permissions assigned.
                           </div>
                         ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {detail.data.permissions.map((p) => (
-                              <span
-                                key={p.id}
-                                className="inline-flex items-center gap-1 border bg-background px-2 py-1 font-mono text-xs"
-                              >
-                                <KeyIcon className="size-3 text-muted-foreground" />
-                                {p.name}
-                              </span>
-                            ))}
-                          </div>
+                          <RolePermissionChips
+                            roleId={r.id}
+                            permissions={detail.data.permissions}
+                            onChanged={(data) =>
+                              setDetails((d) => ({
+                                ...d,
+                                [r.id]: { loading: false, error: false, data },
+                              }))
+                            }
+                          />
                         )}
+                        <AddRolePermission
+                          roleId={r.id}
+                          assignedIds={detail.data.permissions.map((p) => p.id)}
+                          perms={perms}
+                          permsLoading={permsLoading}
+                          onAdded={(data) =>
+                            setDetails((d) => ({
+                              ...d,
+                              [r.id]: { loading: false, error: false, data },
+                            }))
+                          }
+                        />
                       </div>
                     ) : null}
                   </div>

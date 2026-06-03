@@ -29,3 +29,22 @@ export async function getRole(id: number) {
   if (!res.ok) throw new Error("Failed to fetch role");
   return RoleDetailSchema.parse(await res.json());
 }
+
+export async function addRolePermissions(id: number, permissionIds: number[]) {
+  const res = await client(`${API.IAM}/roles/${id}/permissions?mode=add`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ permission_ids: permissionIds }),
+  });
+  if (!res.ok) throw new Error("Failed to add permissions");
+  return RoleDetailSchema.parse(await res.json());
+}
+
+export async function removeRolePermission(id: number, permissionId: number) {
+  const res = await client(
+    `${API.IAM}/roles/${id}/permissions/${permissionId}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) throw new Error("Failed to remove permission");
+  return RoleDetailSchema.parse(await res.json());
+}
