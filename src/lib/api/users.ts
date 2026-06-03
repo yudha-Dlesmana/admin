@@ -1,6 +1,6 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
-import { UserSchema } from "@/types/auth";
+import { UserSchema, SessionsSchema } from "@/types/auth";
 import { UserListSchema, type CreateUserInput } from "@/types/user";
 
 export type ListUsersParams = {
@@ -40,4 +40,10 @@ export async function createUser(input: CreateUserInput) {
     throw new Error(message);
   }
   return UserSchema.parse(await res.json());
+}
+
+export async function getUserSessions(id: string) {
+  const res = await client(`${API.IAM}/users/${id}/sessions`);
+  if (!res.ok) throw new Error("Failed to fetch user sessions");
+  return SessionsSchema.parse(await res.json());
 }

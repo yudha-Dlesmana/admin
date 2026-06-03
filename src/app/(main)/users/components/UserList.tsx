@@ -5,11 +5,14 @@ import {
   MagnifyingGlassIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  CaretDownIcon,
   UserIcon,
   ShieldIcon,
+  SpinnerIcon,
+  DesktopIcon,
 } from "@phosphor-icons/react";
-import { getUsers } from "@/lib/api/users";
-import type { User } from "@/types/auth";
+import { getUsers, getUserSessions } from "@/lib/api/users";
+import type { User, Session } from "@/types/auth";
 import {
   Card,
   CardAction,
@@ -21,15 +24,32 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { AddUserDialog } from "./AddUserDialog";
 
 const LIMIT = 10;
+
+type SessionsState = {
+  loading: boolean;
+  error: boolean;
+  data?: Session[];
+};
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
 }
 
 export function UserList() {
@@ -42,6 +62,9 @@ export function UserList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
+
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Record<string, SessionsState>>({});
 
   // Debounce the search input and reset to the first page on change.
   useEffect(() => {
@@ -68,6 +91,35 @@ export function UserList() {
       active = false;
     };
   }, [query, offset, reload]);
+
+  // Reset expansion when the visible page changes.
+  useEffect(() => {
+    setExpanded(null);
+  }, [query, offset]);
+
+  // Fetch (or refetch) a user's sessions into the cache.
+  const fetchSessions = (id: string) => {
+    setSessions((s) => ({ ...s, [id]: { loading: true, error: false } }));
+    getUserSessions(id)
+      .then((data) =>
+        setSessions((s) => ({
+          ...s,
+          [id]: { loading: false, error: false, data },
+        })),
+      )
+      .catch(() =>
+        setSessions((s) => ({ ...s, [id]: { loading: false, error: true } })),
+      );
+  };
+
+  const toggle = (id: string) => {
+    if (expanded === id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(id);
+    if (!sessions[id]?.data && !sessions[id]?.loading) fetchSessions(id);
+  };
 
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + LIMIT, total);
@@ -118,28 +170,93 @@ export function UserList() {
               No users found.
             </div>
           ) : (
-            items.map((u) => (
-              <div
-                key={u.id}
-                className="flex items-center justify-between gap-4 p-3"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <UserIcon className="size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {u.email}
+            items.map((u) => {
+              const isOpen = expanded === u.id;
+              const state = sessions[u.id];
+              return (
+                <div key={u.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(u.id)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <CaretDownIcon
+                        className={cn(
+                          "size-4 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                      />
+                      <UserIcon className="size-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">
+                          {u.email}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <ShieldIcon className="size-3" />
+                          {u.role_name}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <ShieldIcon className="size-3" />
-                      {u.role_name}
+                    <div className="shrink-0 text-xs text-muted-foreground">
+                      {formatDate(u.created_at)}
                     </div>
-                  </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-t bg-muted/30 px-3 py-3">
+                      {state?.loading ? (
+                        <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                          <SpinnerIcon className="size-4 animate-spin" />
+                          Loading sessions…
+                        </div>
+                      ) : state?.error ? (
+                        <div className="py-2 text-center text-xs text-destructive">
+                          Failed to load sessions.
+                        </div>
+                      ) : state?.data ? (
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Sessions ({state.data.length})
+                          </div>
+                          {state.data.length === 0 ? (
+                            <div className="text-xs text-muted-foreground">
+                              No active sessions.
+                            </div>
+                          ) : (
+                            <div className="divide-y border bg-background">
+                              {state.data.map((s, i) => (
+                                <div
+                                  key={i}
+                                  className="flex items-start justify-between gap-4 p-2.5"
+                                >
+                                  <div className="flex min-w-0 items-start gap-2">
+                                    <DesktopIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                    <div className="min-w-0 space-y-0.5">
+                                      <div className="truncate text-xs font-medium">
+                                        {s.ip || "Unknown IP"}
+                                      </div>
+                                      <div className="break-words text-xs text-muted-foreground">
+                                        {s.ua}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="shrink-0 space-y-0.5 text-right text-xs text-muted-foreground">
+                                    <div>Last seen {formatDateTime(s.last_seen)}</div>
+                                    <div>Created {formatDateTime(s.created_at)}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
-                <div className="shrink-0 text-xs text-muted-foreground">
-                  {formatDate(u.created_at)}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
