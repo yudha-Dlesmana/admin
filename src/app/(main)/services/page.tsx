@@ -1,5 +1,4 @@
-import { ServiceList } from "@/components/ServiceList";
-import { PermissionList } from "./components/PermissionList";
+import { ServicesPermissionsPanel } from "./components/ServicesPermissionsPanel";
 import {
   Card,
   CardContent,
@@ -21,13 +20,8 @@ export default function Service() {
             Manage services and the permissions they expose.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:gap-0 lg:divide-x">
-          <div className="lg:pr-6">
-            <ServiceList />
-          </div>
-          <div className="lg:pl-6">
-            <PermissionList />
-          </div>
+        <CardContent>
+          <ServicesPermissionsPanel />
         </CardContent>
       </Card>
     </div>

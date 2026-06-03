@@ -1,6 +1,5 @@
 import { AuditLog } from "@/components/AuditLog";
 import { CurrentUserAndSession } from "@/components/CurrentUserAndSession";
-import { ServiceList } from "@/components/ServiceList";
 
 export default function Home() {
   return (

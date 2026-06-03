@@ -25,7 +25,17 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
 }
 
-export function PermissionList() {
+type Props = {
+  // Bump to force a refresh (e.g. after a service is deleted elsewhere).
+  refreshSignal?: number;
+  // Called after a permission is created or deleted here.
+  onPermissionsChanged?: () => void;
+};
+
+export function PermissionList({
+  refreshSignal = 0,
+  onPermissionsChanged,
+}: Props) {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
@@ -48,6 +58,13 @@ export function PermissionList() {
     }, 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  // External refresh signal: reload the first page from scratch.
+  useEffect(() => {
+    if (!refreshSignal) return;
+    setOffset(0);
+    setReload((n) => n + 1);
+  }, [refreshSignal]);
 
   useEffect(() => {
     let active = true;
@@ -87,6 +104,7 @@ export function PermissionList() {
   const handleDeleted = (id: number) => {
     setItems((prev) => prev.filter((p) => p.id !== id));
     setTotal((t) => Math.max(0, t - 1));
+    onPermissionsChanged?.();
   };
 
   const initialLoading = loading && offset === 0;
@@ -108,6 +126,7 @@ export function PermissionList() {
           onCreated={() => {
             setOffset(0);
             setReload((n) => n + 1);
+            onPermissionsChanged?.();
           }}
         />
       </div>
