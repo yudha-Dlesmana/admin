@@ -8,7 +8,6 @@ import {
   CaretDownIcon,
   StackIcon,
   SpinnerIcon,
-  DownloadSimpleIcon,
 } from "@phosphor-icons/react";
 import { getServices, getService } from "@/lib/api/services";
 import type { Service, ServiceDetail } from "@/types/service";
@@ -25,6 +24,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { DeleteServiceButton } from "./DeleteServiceButton";
 import { AddServiceDialog } from "./AddServiceDialog";
+import {
+  DownloadPermissionsButton,
+  formatPermissionNames,
+} from "./DownloadPermissionsButton";
 
 const LIMIT = 8;
 
@@ -39,28 +42,6 @@ function formatDate(value?: string | null) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
-}
-
-// JSON keyed by service name with its permission names as an array.
-function formatPermissionNames(service: ServiceDetail) {
-  return JSON.stringify(
-    { [service.name]: service.permissions.map((p) => p.name) },
-    null,
-    2,
-  );
-}
-
-// Trigger a client-side download of the permission names as a JSON file.
-function downloadPermissions(service: ServiceDetail) {
-  const blob = new Blob([formatPermissionNames(service)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${service.name}-permissions.json`;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 type Props = {
@@ -274,20 +255,9 @@ export function ServiceList({ onServiceDeleted, refreshSignal = 0 }: Props) {
                                 Permissions ({detail.data.permissions.length})
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8"
-                                  disabled={
-                                    detail.data.permissions.length === 0
-                                  }
-                                  onClick={() =>
-                                    downloadPermissions(detail.data!)
-                                  }
-                                >
-                                  <DownloadSimpleIcon />
-                                  Download JSON
-                                </Button>
+                                <DownloadPermissionsButton
+                                  service={detail.data}
+                                />
                                 <DeleteServiceButton
                                   serviceId={s.id}
                                   serviceName={detail.data.name}
