@@ -224,90 +224,92 @@ export function ServiceList({ onServiceDeleted, refreshSignal = 0 }: Props) {
           ) : (
             <>
               {items.map((s) => {
-              const isOpen = expanded === s.id;
-              const detail = details[s.id];
-              return (
-                <div key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => toggle(s.id)}
-                    aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <CaretDownIcon
-                        className={cn(
-                          "size-4 shrink-0 text-muted-foreground transition-transform",
-                          isOpen && "rotate-180",
-                        )}
-                      />
-                      <StackIcon className="size-4 shrink-0 text-muted-foreground" />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {s.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ID {s.id}
+                const isOpen = expanded === s.id;
+                const detail = details[s.id];
+                return (
+                  <div key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggle(s.id)}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50"
+                    >
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <CaretDownIcon
+                          className={cn(
+                            "size-4 shrink-0 text-muted-foreground transition-transform",
+                            isOpen && "rotate-180",
+                          )}
+                        />
+                        <StackIcon className="size-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">
+                            {s.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            ID {s.id}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="shrink-0 text-xs text-muted-foreground">
-                      {formatDate(s.created_at)}
-                    </div>
-                  </button>
+                      <div className="shrink-0 text-xs text-muted-foreground">
+                        {formatDate(s.created_at)}
+                      </div>
+                    </button>
 
-                  {isOpen && (
-                    <div className="border-t bg-muted/30 px-3 py-3">
-                      {detail?.loading ? (
-                        <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-                          <SpinnerIcon className="size-4 animate-spin" />
-                          Loading permissions…
-                        </div>
-                      ) : detail?.error ? (
-                        <div className="py-2 text-center text-xs text-destructive">
-                          Failed to load service detail.
-                        </div>
-                      ) : detail?.data ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Permissions ({detail.data.permissions.length})
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8"
-                                disabled={detail.data.permissions.length === 0}
-                                onClick={() =>
-                                  downloadPermissions(detail.data!)
-                                }
-                              >
-                                <DownloadSimpleIcon />
-                                Download JSON
-                              </Button>
-                              <DeleteServiceButton
-                                serviceId={s.id}
-                                serviceName={detail.data.name}
-                                onDeleted={() => deleteServiceRow(s.id)}
-                              />
-                            </div>
+                    {isOpen && (
+                      <div className="border-t bg-muted/30 px-3 py-3">
+                        {detail?.loading ? (
+                          <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                            <SpinnerIcon className="size-4 animate-spin" />
+                            Loading permissions…
                           </div>
-                          {detail.data.permissions.length === 0 ? (
-                            <div className="text-xs text-muted-foreground">
-                              No permissions.
+                        ) : detail?.error ? (
+                          <div className="py-2 text-center text-xs text-destructive">
+                            Failed to load service detail.
+                          </div>
+                        ) : detail?.data ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-xs font-medium text-muted-foreground">
+                                Permissions ({detail.data.permissions.length})
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                  disabled={
+                                    detail.data.permissions.length === 0
+                                  }
+                                  onClick={() =>
+                                    downloadPermissions(detail.data!)
+                                  }
+                                >
+                                  <DownloadSimpleIcon />
+                                  Download JSON
+                                </Button>
+                                <DeleteServiceButton
+                                  serviceId={s.id}
+                                  serviceName={detail.data.name}
+                                  onDeleted={() => deleteServiceRow(s.id)}
+                                />
+                              </div>
                             </div>
-                          ) : (
-                            <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words border bg-background p-2 font-mono text-xs">
-                              {formatPermissionNames(detail.data)}
-                            </pre>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              );
+                            {detail.data.permissions.length === 0 ? (
+                              <div className="text-xs text-muted-foreground">
+                                No permissions.
+                              </div>
+                            ) : (
+                              <pre className="max-h-80 overflow-auto whitespace-pre-wrap wrap-break-word border bg-background p-2 font-mono text-xs">
+                                {formatPermissionNames(detail.data)}
+                              </pre>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
               })}
             </>
           )}
