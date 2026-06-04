@@ -1,7 +1,7 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/auth";
-import { SessionsSchema, TokenSchema, UserSchema } from "@/types/auth";
+import { SessionSchema, SessionsSchema, TokenSchema, UserSchema } from "@/types/auth";
 
 export { refresh } from "@/lib/client";
 
@@ -43,4 +43,12 @@ export async function getSessions() {
   const res = await client(`${API.IAM}/auth/sessions`);
   if (!res.ok) throw new Error("Failed to fetch sessions");
   return SessionsSchema.parse(await res.json());
+}
+
+export async function getCurrentSession() {
+  const res = await client(`${API.IAM}/auth/sessions/current`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch current session");
+  return SessionSchema.parse(await res.json());
 }

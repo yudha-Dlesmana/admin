@@ -12,6 +12,8 @@ import {
   DesktopIcon,
 } from "@phosphor-icons/react";
 import { getUsers, getUserSessions } from "@/lib/api/users";
+import { getCurrentSession } from "@/lib/api/auth";
+import { useAuthStore } from "@/store/auth";
 import type { User, Session } from "@/types/auth";
 import {
   Card,
@@ -26,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AddUserDialog } from "./AddUserDialog";
+import { RevokeSessionButton } from "./RevokeSessionButton";
+import { RevokeTokensButton } from "./RevokeTokensButton";
 
 const LIMIT = 10;
 
@@ -53,6 +57,7 @@ function formatDateTime(value?: string | null) {
 }
 
 export function UserList() {
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
@@ -65,6 +70,19 @@ export function UserList() {
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Record<string, SessionsState>>({});
+  const [currentDevice, setCurrentDevice] = useState<string | null>(null);
+
+  // Resolve the device of the session this admin is currently using, so it can
+  // be flagged (and protected from revoke) in the list.
+  useEffect(() => {
+    let active = true;
+    getCurrentSession()
+      .then((s) => active && setCurrentDevice(s.device))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounce the search input and reset to the first page on change.
   useEffect(() => {
@@ -172,6 +190,7 @@ export function UserList() {
           ) : (
             items.map((u) => {
               const isOpen = expanded === u.id;
+              const isCurrent = u.id === currentUserId;
               const state = sessions[u.id];
               return (
                 <div key={u.id}>
@@ -190,8 +209,15 @@ export function UserList() {
                       />
                       <UserIcon className="size-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {u.email}
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium">
+                            {u.email}
+                          </span>
+                          {isCurrent && (
+                            <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              You
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <ShieldIcon className="size-3" />
@@ -217,8 +243,18 @@ export function UserList() {
                         </div>
                       ) : state?.data ? (
                         <div className="space-y-2">
-                          <div className="text-xs font-medium text-muted-foreground">
-                            Sessions ({state.data.length})
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                              Sessions ({state.data.length})
+                            </div>
+                            {state.data.length > 0 && (
+                              <RevokeTokensButton
+                                userId={u.id}
+                                email={u.email}
+                                isSelf={isCurrent}
+                                onRevoked={() => fetchSessions(u.id)}
+                              />
+                            )}
                           </div>
                           {state.data.length === 0 ? (
                             <div className="text-xs text-muted-foreground">
@@ -226,32 +262,54 @@ export function UserList() {
                             </div>
                           ) : (
                             <div className="divide-y border bg-background">
-                              {state.data.map((s, i) => (
-                                <div
-                                  key={i}
-                                  className="flex items-start justify-between gap-4 p-2.5"
-                                >
-                                  <div className="flex min-w-0 items-start gap-2">
-                                    <DesktopIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                    <div className="min-w-0 space-y-0.5">
-                                      <div className="truncate text-xs font-medium">
-                                        {s.ip || "Unknown IP"}
+                              {state.data.map((s) => {
+                                const isThisSession =
+                                  s.device === currentDevice;
+                                return (
+                                  <div
+                                    key={s.device}
+                                    className="flex items-start justify-between gap-4 p-2.5"
+                                  >
+                                    <div className="flex min-w-0 items-start gap-2">
+                                      <DesktopIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                      <div className="min-w-0 space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="truncate text-xs font-medium">
+                                            {s.ip || "Unknown IP"}
+                                          </span>
+                                          {isThisSession && (
+                                            <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                              This session
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="wrap-break-word text-xs text-muted-foreground">
+                                          {s.ua}
+                                        </div>
                                       </div>
-                                      <div className="wrap-break-word text-xs text-muted-foreground">
-                                        {s.ua}
+                                    </div>
+                                    <div className="flex flex-col shrink-0 items-end">
+                                      <div className="space-y-0.5 text-right text-xs text-muted-foreground">
+                                        <div>
+                                          Last seen{" "}
+                                          {formatDateTime(s.last_seen)}
+                                        </div>
+                                        <div>
+                                          Created {formatDateTime(s.created_at)}
+                                        </div>
                                       </div>
+                                      {!isThisSession && (
+                                        <RevokeSessionButton
+                                          userId={u.id}
+                                          device={s.device}
+                                          ip={s.ip}
+                                          onRevoked={() => fetchSessions(u.id)}
+                                        />
+                                      )}
                                     </div>
                                   </div>
-                                  <div className="shrink-0 space-y-0.5 text-right text-xs text-muted-foreground">
-                                    <div>
-                                      Last seen {formatDateTime(s.last_seen)}
-                                    </div>
-                                    <div>
-                                      Created {formatDateTime(s.created_at)}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>

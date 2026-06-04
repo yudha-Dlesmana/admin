@@ -47,3 +47,32 @@ export async function getUserSessions(id: string) {
   if (!res.ok) throw new Error("Failed to fetch user sessions");
   return SessionsSchema.parse(await res.json());
 }
+
+export async function revokeUserSession(id: string, device: string) {
+  const res = await client(
+    `${API.IAM}/users/${id}/sessions/${encodeURIComponent(device)}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    let message = "Failed to revoke session";
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+    } catch {}
+    throw new Error(message);
+  }
+}
+
+export async function revokeUserTokens(id: string) {
+  const res = await client(`${API.IAM}/users/${id}/revoke-tokens`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    let message = "Failed to revoke tokens";
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+    } catch {}
+    throw new Error(message);
+  }
+}
