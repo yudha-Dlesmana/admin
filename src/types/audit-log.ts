@@ -3,9 +3,11 @@ import { z } from "zod";
 export const AuditLogSchema = z.object({
   id: z.number(),
   actor_id: z.string(),
+  actor_email: z.string().nullish(),
   action: z.string(),
   target_type: z.string().nullish(),
   target_id: z.string().nullish(),
+  target_email: z.string().nullish(),
   meta: z.record(z.string(), z.unknown()).nullish(),
   ip: z.string().nullish(),
   created_at: z.string(),

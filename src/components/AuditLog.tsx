@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import {
+  CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
   ClockCounterClockwiseIcon,
   GlobeIcon,
 } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
 import { getAuditLogs } from "@/lib/api/audit-logs";
 import type { AuditLog as AuditLogEntry } from "@/types/audit-log";
 import {
@@ -38,11 +40,13 @@ export function AuditLog() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [expanded, setExpanded] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(false);
+    setExpanded(null);
     getAuditLogs({ limit: LIMIT, offset })
       .then((res) => {
         if (!active) return;
@@ -86,36 +90,80 @@ export function AuditLog() {
               No audit logs found.
             </div>
           ) : (
-            items.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 p-3">
-                <ClockCounterClockwiseIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="text-sm font-medium">{log.action}</span>
-                    {log.target_type && (
-                      <span className="text-xs text-muted-foreground">
-                        {log.target_type}
-                        {log.target_id ? ` · ${log.target_id}` : ""}
-                      </span>
+            items.map((log) => {
+              const isOpen = expanded === log.id;
+              const hasMeta = !!log.meta && Object.keys(log.meta).length > 0;
+              return (
+                <div key={log.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      hasMeta && setExpanded(isOpen ? null : log.id)
+                    }
+                    aria-expanded={isOpen}
+                    disabled={!hasMeta}
+                    className={cn(
+                      "flex w-full items-start gap-3 p-3 text-left transition-colors",
+                      hasMeta && "hover:bg-muted/50",
                     )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                    <span className="truncate" title={log.actor_id}>
-                      by {log.actor_id}
-                    </span>
-                    {log.ip && (
-                      <span className="inline-flex items-center gap-1">
-                        <GlobeIcon className="size-3" />
-                        {log.ip}
-                      </span>
+                  >
+                    {hasMeta ? (
+                      <CaretDownIcon
+                        className={cn(
+                          "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                      />
+                    ) : (
+                      <ClockCounterClockwiseIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     )}
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="text-sm font-medium">
+                          {log.action}
+                        </span>
+                        {log.target_type && (
+                          <span className="text-xs text-muted-foreground">
+                            {log.target_type}
+                            {log.target_email || log.target_id
+                              ? ` · ${log.target_email ?? log.target_id}`
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span
+                          className="truncate"
+                          title={log.actor_email ?? log.actor_id}
+                        >
+                          by {log.actor_email ?? log.actor_id}
+                        </span>
+                        {log.ip && (
+                          <span className="inline-flex items-center gap-1">
+                            <GlobeIcon className="size-3" />
+                            {log.ip}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-xs text-muted-foreground">
+                      {formatDateTime(log.created_at)}
+                    </div>
+                  </button>
+
+                  {isOpen && hasMeta && (
+                    <div className="border-t bg-muted/30 px-3 py-3">
+                      <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                        Metadata
+                      </div>
+                      <pre className="overflow-x-auto rounded-none border bg-background p-2.5 text-xs">
+                        {JSON.stringify(log.meta, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
-                <div className="shrink-0 text-xs text-muted-foreground">
-                  {formatDateTime(log.created_at)}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

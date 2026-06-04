@@ -234,22 +234,6 @@ export function UserList() {
 
                   {isOpen && (
                     <div className="border-t bg-muted/30 px-3 py-3 space-y-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <EditUserDialog
-                          user={u}
-                          onUpdated={() => setReload((n) => n + 1)}
-                        />
-                        {!isCurrent && (
-                          <DeleteUserButton
-                            userId={u.id}
-                            email={u.email}
-                            onDeleted={() => {
-                              setExpanded(null);
-                              setReload((n) => n + 1);
-                            }}
-                          />
-                        )}
-                      </div>
                       {state?.loading ? (
                         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
                           <SpinnerIcon className="size-4 animate-spin" />
@@ -265,14 +249,31 @@ export function UserList() {
                             <div className="text-xs font-medium text-muted-foreground">
                               Sessions ({state.data.length})
                             </div>
-                            {state.data.length > 0 && (
-                              <RevokeTokensButton
-                                userId={u.id}
-                                email={u.email}
-                                isSelf={isCurrent}
-                                onRevoked={() => fetchSessions(u.id)}
-                              />
-                            )}
+                            <div className="flex flex-col items-end  gap-2">
+                              <div>
+                                <EditUserDialog
+                                  user={u}
+                                  onUpdated={() => setReload((n) => n + 1)}
+                                />
+                                <DeleteUserButton
+                                  userId={u.id}
+                                  email={u.email}
+                                  onDeleted={() => {
+                                    setExpanded(null);
+                                    setReload((n) => n + 1);
+                                  }}
+                                />
+                              </div>
+
+                              {state.data.length > 0 && (
+                                <RevokeTokensButton
+                                  userId={u.id}
+                                  email={u.email}
+                                  isSelf={isCurrent}
+                                  onRevoked={() => fetchSessions(u.id)}
+                                />
+                              )}
+                            </div>
                           </div>
                           {state.data.length === 0 ? (
                             <div className="text-xs text-muted-foreground">

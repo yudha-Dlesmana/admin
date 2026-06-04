@@ -18,15 +18,30 @@ async function doRefresh(): Promise<boolean> {
       credentials: "include",
     });
     if (!res.ok) {
-      useAuthStore.getState().clearAuth();
+      await failAuth();
       return false;
     }
     const data = TokenSchema.parse(await res.json());
     useAuthStore.getState().setToken(data);
     return true;
   } catch {
-    useAuthStore.getState().clearAuth();
+    await failAuth();
     return false;
+  }
+}
+
+// Refresh failed: drop in-memory auth, clear the refresh cookie server-side,
+// and bounce to the login page.
+async function failAuth() {
+  useAuthStore.getState().clearAuth();
+  try {
+    await fetch(`${API.IAM}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch {}
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
   }
 }
 
