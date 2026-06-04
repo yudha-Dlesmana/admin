@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { PlusIcon } from "@phosphor-icons/react";
-import { createUser } from "@/lib/api/users";
+import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { updateUser } from "@/lib/api/users";
 import { getRoles } from "@/lib/api/roles";
 import type { Role } from "@/types/role";
-import { createUserSchema } from "@/types/user";
+import type { User } from "@/types/auth";
+import { updateUserSchema } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,12 +36,13 @@ type FieldErrors = {
 };
 
 type Props = {
-  onCreated?: () => void;
+  user: User;
+  onUpdated?: () => void;
 };
 
-export function AddUserDialog({ onCreated }: Props) {
+export function EditUserDialog({ user, onUpdated }: Props) {
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(user.email);
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,22 +51,28 @@ export function AddUserDialog({ onCreated }: Props) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
 
-  // Load roles for the picker when the dialog opens.
+  // Load roles when the dialog opens and preselect the user's current role by
+  // matching its name (the list only carries role_name, not role_id).
   useEffect(() => {
     if (!open) return;
     let active = true;
     setRolesLoading(true);
     getRoles({ limit: 100 })
-      .then((res) => active && setRoles(res.items))
+      .then((res) => {
+        if (!active) return;
+        setRoles(res.items);
+        const match = res.items.find((r) => r.name === user.role_name);
+        if (match) setRoleId(match.id);
+      })
       .catch(() => active && toast.error("Failed to load roles"))
       .finally(() => active && setRolesLoading(false));
     return () => {
       active = false;
     };
-  }, [open]);
+  }, [open, user.role_name]);
 
   const reset = () => {
-    setEmail("");
+    setEmail(user.email);
     setPassword("");
     setRoleId(null);
     setErrors({});
@@ -74,7 +82,7 @@ export function AddUserDialog({ onCreated }: Props) {
     e.preventDefault();
     setErrors({});
 
-    const result = createUserSchema.safeParse({
+    const result = updateUserSchema.safeParse({
       email,
       password,
       role_id: roleId ?? undefined,
@@ -91,13 +99,12 @@ export function AddUserDialog({ onCreated }: Props) {
 
     setLoading(true);
     try {
-      await createUser(result.data);
-      toast.success("User created");
-      reset();
+      await updateUser(user.id, result.data);
+      toast.success("User updated");
       setOpen(false);
-      onCreated?.();
+      onUpdated?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create user");
+      toast.error(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setLoading(false);
     }
@@ -113,25 +120,25 @@ export function AddUserDialog({ onCreated }: Props) {
     >
       <DialogTrigger
         render={
-          <Button size="sm">
-            <PlusIcon />
-            Add user
+          <Button variant="outline" size="sm" className="h-7 px-2">
+            <PencilSimpleIcon />
+            Edit
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add user</DialogTitle>
+          <DialogTitle>Edit user</DialogTitle>
           <DialogDescription>
-            Create a new user account and assign a role.
+            Update the account details and role assignment.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="add-email">Email</Label>
+            <Label htmlFor="edit-email">Email</Label>
             <Input
-              id="add-email"
+              id="edit-email"
               type="email"
               placeholder="user@example.com"
               autoComplete="off"
@@ -145,11 +152,11 @@ export function AddUserDialog({ onCreated }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="add-password">Password</Label>
+            <Label htmlFor="edit-password">Password</Label>
             <Input
-              id="add-password"
+              id="edit-password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Leave blank to keep current"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -172,9 +179,7 @@ export function AddUserDialog({ onCreated }: Props) {
                 disabled={rolesLoading}
               >
                 <SelectValue
-                  placeholder={
-                    rolesLoading ? "Loading roles…" : "Select a role"
-                  }
+                  placeholder={rolesLoading ? "Loading roles…" : "Select a role"}
                 >
                   {(value: number | null) =>
                     roles.find((r) => r.id === value)?.name
@@ -203,7 +208,7 @@ export function AddUserDialog({ onCreated }: Props) {
               }
             />
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create user"}
+              {loading ? "Saving..." : "Save changes"}
             </Button>
           </DialogFooter>
         </form>

@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 import { AddUserDialog } from "./AddUserDialog";
 import { RevokeSessionButton } from "./RevokeSessionButton";
 import { RevokeTokensButton } from "./RevokeTokensButton";
+import { EditUserDialog } from "./EditUserDialog";
+import { DeleteUserButton } from "./DeleteUserButton";
 
 const LIMIT = 10;
 
@@ -231,7 +233,23 @@ export function UserList() {
                   </button>
 
                   {isOpen && (
-                    <div className="border-t bg-muted/30 px-3 py-3">
+                    <div className="border-t bg-muted/30 px-3 py-3 space-y-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <EditUserDialog
+                          user={u}
+                          onUpdated={() => setReload((n) => n + 1)}
+                        />
+                        {!isCurrent && (
+                          <DeleteUserButton
+                            userId={u.id}
+                            email={u.email}
+                            onDeleted={() => {
+                              setExpanded(null);
+                              setReload((n) => n + 1);
+                            }}
+                          />
+                        )}
+                      </div>
                       {state?.loading ? (
                         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
                           <SpinnerIcon className="size-4 animate-spin" />

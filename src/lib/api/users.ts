@@ -1,7 +1,11 @@
 import { API } from "@/lib/config";
 import { client } from "@/lib/client";
 import { UserSchema, SessionsSchema } from "@/types/auth";
-import { UserListSchema, type CreateUserInput } from "@/types/user";
+import {
+  UserListSchema,
+  type CreateUserInput,
+  type UpdateUserInput,
+} from "@/types/user";
 
 export type ListUsersParams = {
   limit?: number;
@@ -40,6 +44,38 @@ export async function createUser(input: CreateUserInput) {
     throw new Error(message);
   }
   return UserSchema.parse(await res.json());
+}
+
+export async function updateUser(id: string, input: UpdateUserInput) {
+  // Drop blank password so it isn't sent (keeps the existing one).
+  const { password, ...rest } = input;
+  const body = password ? { ...rest, password } : rest;
+  const res = await client(`${API.IAM}/users/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let message = "Failed to update user";
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+    } catch {}
+    throw new Error(message);
+  }
+  return UserSchema.parse(await res.json());
+}
+
+export async function deleteUser(id: string) {
+  const res = await client(`${API.IAM}/users/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    let message = "Failed to delete user";
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+    } catch {}
+    throw new Error(message);
+  }
 }
 
 export async function getUserSessions(id: string) {
