@@ -237,14 +237,18 @@ export function UserList() {
                                       <div className="truncate text-xs font-medium">
                                         {s.ip || "Unknown IP"}
                                       </div>
-                                      <div className="break-words text-xs text-muted-foreground">
+                                      <div className="wrap-break-word text-xs text-muted-foreground">
                                         {s.ua}
                                       </div>
                                     </div>
                                   </div>
                                   <div className="shrink-0 space-y-0.5 text-right text-xs text-muted-foreground">
-                                    <div>Last seen {formatDateTime(s.last_seen)}</div>
-                                    <div>Created {formatDateTime(s.created_at)}</div>
+                                    <div>
+                                      Last seen {formatDateTime(s.last_seen)}
+                                    </div>
+                                    <div>
+                                      Created {formatDateTime(s.created_at)}
+                                    </div>
                                   </div>
                                 </div>
                               ))}
