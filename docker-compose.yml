@@ -6,9 +6,11 @@ services:
         NEXT_PUBLIC_IAM_API: https://iam.smana.web.id/v1
     container_name: admin-panel
     restart: unless-stopped
-    ports:
+    expose:
       - "3000"
-  
+    networks:
+      - admin_network
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: admin_cloudflared
@@ -18,3 +20,9 @@ services:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
       - admin-panel
+    networks:
+      - admin_network
+
+networks:
+  admin_network:
+    name: admin_network
