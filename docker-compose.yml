@@ -1,10 +1,10 @@
 services:
-  admin:
+  admin-panel:
     build:
       context: .
       args:
         NEXT_PUBLIC_IAM_API: https://iam.smana.web.id/v1
-    container_name: admin
+    container_name: admin-panel
     restart: unless-stopped
     ports:
       - "3000"
@@ -17,4 +17,4 @@ services:
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
-      - admin
+      - admin-panel
