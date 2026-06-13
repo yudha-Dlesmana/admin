@@ -1,0 +1,10 @@
+services:
+  iam-admin:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_IAM_API: https://iam.smana/web.id/v1
+    container_name: iam-admin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
